@@ -1,0 +1,381 @@
+[
+	{
+		"name": "Web制作",
+		"icon": "E87D",
+		"type": "root",
+		"distance": 0,
+		"children": [
+			{
+				"name": "情報設計",
+				"icon": "e97a",
+				"type": "terminal",
+				"distance": 4.66,
+				"children": [
+					{
+						"name": "情報構造化",
+						"icon": "f1cd",
+						"type": "uncommon",
+						"distance": 2.6,
+						"description": "情報のまとまりを見つけられる\n情報同士の関係を整理できる\n階層構造として表現できる\n分類軸を設計できる\n情報の重複や欠落に気づける"
+					},
+					{
+						"name": "文書構造化",
+						"icon": "f1cd",
+						"type": "uncommon",
+						"distance": 2.67,
+						"description": "見出し構造を設計できる\n読む順番を設計できる\n要点と詳細を分けられる\nMarkdownで構造化できる\nHTMLの意味構造を理解できる"
+					},
+					{
+						"name": "IA設計",
+						"icon": "f1cd",
+						"type": "uncommon",
+						"distance": 2.93,
+						"description": "サイト構造を設計できる\nナビゲーションを設計できる\nカテゴリを設計できる\nタグを設計できる\nユーザーの探索行動を考慮できる"
+					},
+					{
+						"name": "コンテンツモデル設計",
+						"icon": "f1cd",
+						"type": "uncommon",
+						"distance": 2.93,
+						"description": "コンテンツの型を定義できる\nコンテンツ同士の関係を設計できる\n入力項目を設計できる\n再利用しやすい単位に分解できる\n運用しやすいモデルを設計できる"
+					},
+					{
+						"name": "データ設計",
+						"icon": "f1cd",
+						"type": "uncommon",
+						"distance": 2.27,
+						"description": "データの構造を理解できる\nエンティティを整理できる\nリレーションを理解できる\n正規化の考え方を理解できる\n将来の変更に耐える設計を考えられる"
+					},
+					{
+						"name": "CMS設計",
+						"icon": "f1cd",
+						"type": "uncommon",
+						"distance": 2.53,
+						"description": "CMSの役割を理解できる\nHeadless CMSの役割を理解できる\n編集者の入力体験を設計できる\n表示と管理の責務を分けて考えられる\nCMS導入の妥当性を判断できる"
+					}
+				]
+			},
+			{
+				"name": "実装理解",
+				"icon": "e86f",
+				"type": "terminal",
+				"distance": 4.24,
+				"children": [
+					{
+						"name": "Web標準理解",
+						"icon": "f1cd",
+						"type": "uncommon",
+						"distance": 2.27,
+						"description": "HTMLの役割を説明できる\nCSSの役割を説明できる\nJavaScriptの役割を説明できる\nブラウザの基本的な仕組みを理解できる\nWeb標準に沿う価値を説明できる"
+					},
+					{
+						"name": "HTML/CSS理解",
+						"icon": "f1cd",
+						"type": "uncommon",
+						"distance": 2.6,
+						"description": "良いHTMLと悪いHTMLを判断できる\n良いCSSと悪いCSSを判断できる\nセマンティックな構造を理解できる\nレスポンシブ対応の考え方を理解できる\n保守しやすい実装か判断できる"
+					},
+					{
+						"name": "JavaScript理解",
+						"icon": "f1cd",
+						"type": "uncommon",
+						"distance": 2.07,
+						"description": "JavaScriptの役割を説明できる\n状態管理の概念を理解できる\n非同期処理の概念を理解できる\nフロントエンドフレームワークの役割を理解できる\n実装複雑度の高まりに気づける"
+					},
+					{
+						"name": "アクセシビリティ理解",
+						"icon": "f1cd",
+						"type": "uncommon",
+						"distance": 2.07,
+						"description": "アクセシビリティの必要性を説明できる\nHTML構造とアクセシビリティの関係を理解できる\nキーボード操作の重要性を理解できる\n代替テキストの役割を理解できる\nアクセシビリティ上の問題に気づける"
+					},
+					{
+						"name": "パフォーマンス理解",
+						"icon": "f1cd",
+						"type": "uncommon",
+						"distance": 2.07,
+						"description": "表示速度の重要性を説明できる\n画像最適化の必要性を理解できる\nJavaScript量の影響を理解できる\nCore Web Vitalsの概要を理解できる\nパフォーマンス劣化の要因に気づける"
+					},
+					{
+						"name": "実装レビュー",
+						"icon": "f1cd",
+						"type": "uncommon",
+						"distance": 2.4,
+						"description": "AIが生成したコードを読める\n実装方針の妥当性を判断できる\n技術的なリスクを説明できる\nエンジニアと具体的に会話できる\n仕様と実装のズレに気づける"
+					},
+					{
+						"name": "技術設計理解",
+						"icon": "f1cd",
+						"type": "uncommon",
+						"distance": 2.2,
+						"description": "コンポーネント設計の考え方を理解できる\nAPI設計の考え方を理解できる\nテストの役割を理解できる\n抽象化しすぎるリスクを理解できる\n移行しやすい設計か判断できる"
+					}
+				]
+			},
+			{
+				"name": "表現",
+				"icon": "e40a",
+				"type": "terminal",
+				"distance": 4.57,
+				"children": [
+					{
+						"name": "ライティング",
+						"icon": "f1cd",
+						"type": "uncommon",
+						"distance": 2.6,
+						"description": "読み手に合わせて文章を書ける\n目的に合わせて文体を選べる\n複雑な内容を平易に説明できる\n見出しで内容を伝えられる\n文章の冗長さを削れる"
+					},
+					{
+						"name": "編集",
+						"icon": "f1cd",
+						"type": "uncommon",
+						"distance": 2.53,
+						"description": "文章の論理構造を整えられる\n読者に不要な情報を削れる\n情報の不足に気づける\n用語や表記を統一できる\n記事として成立する流れを作れる"
+					},
+					{
+						"name": "UI表現",
+						"icon": "f1cd",
+						"type": "uncommon",
+						"distance": 2.67,
+						"description": "画面上の情報優先度を整理できる\nラベルや文言を設計できる\n状態やフィードバックを表現できる\n操作の流れをわかりやすくできる\n見た目と機能の関係を説明できる"
+					},
+					{
+						"name": "ビジュアル表現",
+						"icon": "f1cd",
+						"type": "uncommon",
+						"distance": 2.27,
+						"description": "視覚的な優先順位を作れる\n余白や整列の意味を理解できる\n色や文字の役割を理解できる\nブランドらしさを表現できる\n視覚表現の違和感に気づける"
+					},
+					{
+						"name": "図解",
+						"icon": "f1cd",
+						"type": "uncommon",
+						"distance": 2.6,
+						"description": "概念を図にできる\n関係性を図にできる\nフローを図にできる\n複雑な構造を単純化できる\n図と文章を組み合わせて説明できる"
+					},
+					{
+						"name": "トーン設計",
+						"icon": "f1cd",
+						"type": "uncommon",
+						"distance": 2.73,
+						"description": "読み手に合う語調を選べる\n会社やサービスの人格を表現できる\n場面に応じて硬さを調整できる\n説明と訴求のバランスを取れる\n一貫した言葉遣いを設計できる"
+					}
+				]
+			},
+			{
+				"name": "問題解決",
+				"icon": "e87b",
+				"type": "terminal",
+				"distance": 4.68,
+				"children": [
+					{
+						"name": "課題発見",
+						"icon": "f1cd",
+						"type": "uncommon",
+						"distance": 2.73,
+						"description": "表面的な要望と本質的な課題を分けられる\n問題の背景を掘り下げられる\n課題の優先順位をつけられる\n解くべき問題を言語化できる\n解かない問題を判断できる"
+					},
+					{
+						"name": "要件整理",
+						"icon": "f1cd",
+						"type": "uncommon",
+						"distance": 2.53,
+						"description": "要望を要件に変換できる\n必須要件と希望要件を分けられる\n制約条件を整理できる\n関係者の認識を揃えられる\n要件の曖昧さに気づける"
+					},
+					{
+						"name": "調査",
+						"icon": "f1cd",
+						"type": "uncommon",
+						"distance": 2.67,
+						"description": "必要な情報を特定できる\n信頼できる情報源を選べる\n複数の情報を比較できる\nAIの調査結果を検証できる\n調査結果を判断材料に変換できる"
+					},
+					{
+						"name": "分析",
+						"icon": "f1cd",
+						"type": "uncommon",
+						"distance": 2.67,
+						"description": "事実と解釈を分けられる\nデータから傾向を読み取れる\n原因と結果を整理できる\n仮説を検証できる\n分析結果を次の行動につなげられる"
+					},
+					{
+						"name": "仮説立案",
+						"icon": "f1cd",
+						"type": "uncommon",
+						"distance": 2.67,
+						"description": "課題に対する仮説を立てられる\n複数の選択肢を出せる\n検証しやすい形に分解できる\n小さく試す方法を考えられる\n仮説が外れた場合の対応を考えられる"
+					},
+					{
+						"name": "技術選定",
+						"icon": "f1cd",
+						"type": "uncommon",
+						"distance": 2.8,
+						"description": "技術選定の判断軸を作れる\n標準技術との距離を評価できる\nベンダーロックインのリスクを評価できる\n運用コストを考慮できる\n移行しやすさを考慮できる"
+					},
+					{
+						"name": "提案設計",
+						"icon": "f1cd",
+						"type": "uncommon",
+						"distance": 2.67,
+						"description": "提案の論理構成を作れる\n顧客課題と解決策を接続できる\n判断材料を整理できる\n複数案のメリットとデメリットを示せる\nやらない選択肢を提案できる"
+					}
+				]
+			},
+			{
+				"name": "プロジェクト推進",
+				"icon": "e153",
+				"type": "terminal",
+				"distance": 4.57,
+				"children": [
+					{
+						"name": "進行設計",
+						"icon": "f1cd",
+						"type": "uncommon",
+						"distance": 2.6,
+						"description": "作業の流れを設計できる\n依存関係を整理できる\nマイルストーンを設定できる\n無理のある進行に気づける\n余白を含めた計画を立てられる"
+					},
+					{
+						"name": "見積もり",
+						"icon": "f1cd",
+						"type": "uncommon",
+						"distance": 2.53,
+						"description": "作業範囲を整理できる\n不確実性を見積もりに反映できる\n工数と金額の関係を説明できる\n見積もりの前提条件を書ける\n追加対応の影響を説明できる"
+					},
+					{
+						"name": "顧客コミュニケーション",
+						"icon": "f1cd",
+						"type": "uncommon",
+						"distance": 2.6,
+						"description": "顧客の発言の意図を汲み取れる\n専門的な内容をわかりやすく説明できる\n懸念点を早めに共有できる\n認識違いを防げる\n相手に必要な判断を促せる"
+					},
+					{
+						"name": "合意形成",
+						"icon": "f1cd",
+						"type": "uncommon",
+						"distance": 2.67,
+						"description": "決めるべきことを明確にできる\n関係者の意見を整理できる\n判断基準を提示できる\n決定事項を記録できる\n合意できていない点を明確にできる"
+					},
+					{
+						"name": "品質管理",
+						"icon": "f1cd",
+						"type": "uncommon",
+						"distance": 2.73,
+						"description": "品質基準を定義できる\nレビュー観点を整理できる\n成果物の不足に気づける\n修正の優先順位を判断できる\n品質と納期のバランスを判断できる"
+					},
+					{
+						"name": "リスク管理",
+						"icon": "f1cd",
+						"type": "uncommon",
+						"distance": 2.27,
+						"description": "技術的リスクに気づける\n進行上のリスクに気づける\n顧客側のリスクに気づける\nリスクを早めに共有できる\n回避策や代替案を考えられる"
+					}
+				]
+			},
+			{
+				"name": "ビジネス理解",
+				"icon": "e8f9",
+				"type": "terminal",
+				"distance": 4.44,
+				"children": [
+					{
+						"name": "顧客理解",
+						"icon": "f1cd",
+						"type": "uncommon",
+						"distance": 2.27,
+						"description": "顧客の事業を理解できる\n顧客の制約を理解できる\n顧客の意思決定構造を理解できる\n顧客の社内事情を考慮できる\n顧客にとっての成功を言語化できる"
+					},
+					{
+						"name": "業界理解",
+						"icon": "f1cd",
+						"type": "uncommon",
+						"distance": 2.4,
+						"description": "顧客の業界構造を理解できる\n業界特有の制約を理解できる\n競合や市場環境を調べられる\n業界の変化を踏まえて提案できる\n技術トレンドと業界課題を接続できる"
+					},
+					{
+						"name": "価値理解",
+						"icon": "f1cd",
+						"type": "uncommon",
+						"distance": 2.47,
+						"description": "何にお金が払われているか理解できる\n作業価値と判断価値を区別できる\n成果物ではなく成果を説明できる\n顧客にとっての価値を言語化できる\n価値が低い作業を見直せる"
+					},
+					{
+						"name": "収益理解",
+						"icon": "f1cd",
+						"type": "uncommon",
+						"distance": 2.13,
+						"description": "見積もりの意味を理解できる\n工数と利益の関係を理解できる\n継続案件の価値を理解できる\n赤字化しやすい要因に気づける\n会社の持続可能性を考慮できる"
+					},
+					{
+						"name": "投資対効果理解",
+						"icon": "f1cd",
+						"type": "uncommon",
+						"distance": 2.6,
+						"description": "施策にかかるコストを意識できる\n得られる効果を仮説化できる\n優先順位を費用対効果で考えられる\n過剰品質に気づける\nやる価値があるか判断できる"
+					},
+					{
+						"name": "提案価値",
+						"icon": "f1cd",
+						"type": "uncommon",
+						"distance": 2.53,
+						"description": "技術的に正しいだけでなく事業上有効な提案ができる\n顧客の投資対効果を説明できる\n短期効果と長期効果を分けて説明できる\n顧客の判断リスクを下げられる\nPixelGridの専門性を価値として提示できる"
+					},
+					{
+						"name": "継続関係設計",
+						"icon": "f1cd",
+						"type": "uncommon",
+						"distance": 2.67,
+						"description": "一度きりで終わらない関係を考えられる\n継続的な改善余地を見つけられる\n顧客との信頼関係を設計できる\n保守や運用の価値を説明できる\n長期的な技術支援の形を考えられる"
+					}
+				]
+			},
+			{
+				"name": "組織貢献",
+				"icon": "f233",
+				"type": "terminal",
+				"distance": 4.59,
+				"children": [
+					{
+						"name": "ナレッジ共有",
+						"icon": "f1cd",
+						"type": "uncommon",
+						"distance": 2.67,
+						"description": "学んだことを社内に共有できる\n再利用しやすい形で記録できる\n判断の背景を残せる\n他者が使える資料を作れる\n暗黙知を形式知にできる"
+					},
+					{
+						"name": "教育",
+						"icon": "f1cd",
+						"type": "uncommon",
+						"distance": 2.67,
+						"description": "他者の理解度に合わせて説明できる\n学習の順番を設計できる\nレビューを通じて育成できる\n失敗しやすい点を事前に伝えられる\n自走できる状態に導ける"
+					},
+					{
+						"name": "採用",
+						"icon": "f1cd",
+						"type": "uncommon",
+						"distance": 2.6,
+						"description": "会社に必要な人物像を説明できる\n候補者の強みを見つけられる\nスキルと文化適性を分けて見られる\n採用広報に貢献できる\n入社後の活躍イメージを考えられる"
+					},
+					{
+						"name": "技術発信",
+						"icon": "f1cd",
+						"type": "uncommon",
+						"distance": 2.67,
+						"description": "社外に共有できる知見を見つけられる\n技術記事を書ける\n実務知見を一般化できる\n会社の専門性として発信できる\n発信によって採用や案件につなげられる"
+					},
+					{
+						"name": "文化形成",
+						"icon": "f1cd",
+						"type": "uncommon",
+						"distance": 2.4,
+						"description": "会社の価値観を理解できる\n健全な余白の重要性を理解できる\n学習や実験を促進できる\n属人化を減らす行動ができる\n持続可能な働き方を支えられる"
+					},
+					{
+						"name": "改善提案",
+						"icon": "f1cd",
+						"type": "uncommon",
+						"distance": 2.53,
+						"description": "業務上の非効率に気づける\n小さく試せる改善案を出せる\n道具や仕組みを見直せる\n運用コストを下げる提案ができる\n複数の問題を同時に解決する案を考えられる"
+					}
+				]
+			}
+		]
+	}
+]

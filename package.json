@@ -1,0 +1,12 @@
+{
+  "name": "@labs/skill-map",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "demoMeta": {
+    "title": "Skill Map",
+    "thumbnail": "./thumbnail.png"
+  }
+}
