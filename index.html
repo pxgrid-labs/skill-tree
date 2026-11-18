@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="format-detection" content="email=no,telephone=no,address=no">
+<title>=^.^=</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+<style>
+html {
+	height: 100%;
+	background: #000;
+}
+
+body {
+	height: 100%;
+	margin: 0;
+}
+
+/* ツリー全体をドラッグで動かすための窓。これ自体をスクロールコンテナにして、
+   はみ出したフレームをスクロールで見せる。ドラッグはscrollLeft/scrollTopを動かすだけなので、
+   ホイール／トラックパッド／タッチのネイティブスクロールと共存できる（transformだと殺してしまう）。
+   スクロールバーは見た目のため隠すが、スクロール機能自体は残す。 */
+.Viewport {
+	width: 100vw;
+	height: 100vh;
+	overflow: auto;
+	cursor: grab;
+	user-select: none;
+	-webkit-user-select: none;
+	overscroll-behavior: contain;
+	scrollbar-width: none;
+}
+
+.Viewport::-webkit-scrollbar {
+	display: none;
+}
+
+.Viewport.is-grabbing {
+	cursor: grabbing;
+}
+
+.Frame {
+	width: max-content;
+	box-sizing: border-box;
+	padding: 16px;
+	background: url( "./assets/img/bg_001.webp" );
+}
+
+.Frame__Inner {
+	position: relative;
+	background: url( "./assets/img/bg_002.webp" );
+	box-shadow: inset 0 0 32px 0 #000;
+
+	&::before {
+		content: "";
+		position: absolute;
+		inset: 0;
+		border: 1px solid #FFF;
+		mix-blend-mode: soft-light;
+		pointer-events: none;
+	}
+
+	svg {
+		display: block;
+	}
+
+	foreignObject.icon {
+		div {
+			display: grid;
+			place-items: center;
+			width: 100%;
+			height: 100%;
+			font-family: 'Material Symbols Outlined';
+			font-size: 32px;
+			line-height: 0;
+			color: #a1a1a1;
+		}
+	}
+}
+
+#tree a {
+	cursor: pointer;
+}
+
+/* グロウは複製フレーム(.glow)を裏に敷いて表現する。8pxのdrop-shadowは固定なので
+   一度だけラスタライズされ、以降はopacity合成だけ（blurを毎フレーム再計算しない）。 */
+
+/* .glowGroup: フェード担当。有効化は速く、無効化は余韻を残す（遷移先ルールのdurationが使われる） */
+#tree a .glowGroup {
+	opacity: 0;
+	transition: opacity 0.6s ease;	/* 無効化（→0）のとき：余韻 */
+}
+
+#tree a.is-acquired .glowGroup {
+	opacity: 1;
+	transition: opacity 0.15s ease;	/* 有効化（→1）のとき：速く */
+}
+
+/* .glow: 固定filterのグロウ。取得中だけopacityをパルスさせる（プレーンな数値なので堅牢） */
+#tree a .glow {
+	filter: drop-shadow( 0 0 8px #ffe6a0 ) drop-shadow( 0 0 8px #ffb43c );
+	pointer-events: none;
+}
+
+#tree a.is-acquired .glow {
+	animation: glowPulse 1.6s ease-in-out infinite;
+}
+
+/* アイコンはグロウなし。色だけをtransitionで滑らかに変える（ラベルや吹き出しには効かせない） */
+#tree a foreignObject.icon div {
+	transition: color 0.6s ease;
+}
+
+#tree a.is-acquired foreignObject.icon div {
+	color: #ffe6a0;
+}
+
+@keyframes glowPulse {
+
+	0%, 100% {
+		opacity: 0.55;
+	}
+
+	50% {
+		opacity: 1;
+	}
+
+}
+
+/* 末端の弧：line-outer(縄)と黒芯は常時プレースホルダー。line-fill(赤い塗り)だけ、
+   兄弟を全取得して円が完成したときに、線の長さ(stroke-dashoffset)で描き足す。
+   pathLength="1" で全長を1に正規化しているので、半径に依らず 1→0 で制御できる。 */
+#tree .ring .ring-fill {
+	stroke-dasharray: 1;
+	stroke-dashoffset: 1;
+	transition: stroke-dashoffset 0.6s ease;
+}
+
+#tree .ring.is-complete .ring-fill {
+	stroke-dashoffset: 0;
+}
+
+/* ラベル用foreignObjectはテキストと同じ小さいサイズ。余白が背後ノードのクリックを奪わないよう透過。
+   [?]だけクリックを受ける。吹き出しもこのforeignObjectの中に置くので、小さな枠から上へ
+   はみ出して出せるよう overflow: visible にする（既定はクリップされる）。 */
+.label {
+	pointer-events: none;
+	overflow: visible;
+}
+
+/* ノードのラベル（[?]＋名前）。名前が長いときはHTMLとして折り返す（SVG textは折り返せない）。
+   flex(nowrap)にして先頭の[?]は固定アイテム、名前だけを内部で折り返す＝[?]が2行目に回らない。 */
+.label__inner {
+	box-sizing: border-box;
+	width: 100%;
+	display: flex;
+	align-items: flex-start;
+	justify-content: center;
+	font-family: sans-serif;
+	font-size: 12px;
+	line-height: 1.3;
+	color: #FFF;
+	text-align: center;
+	pointer-events: none;
+}
+
+.label__name {
+	min-width: 0;			/* flexアイテムを内容幅より狭くできるようにして折り返させる */
+	overflow-wrap: anywhere;
+	word-break: break-word;
+}
+
+/* [?]ボタンと吹き出しをまとめる包み。吹き出しはこの包みを基準に絶対配置するので
+   position: relative を持たせる。flex(nowrap)の先頭固定アイテムの役割もここが担う。 */
+.help-wrap {
+	position: relative;
+	flex: none;				/* flex(nowrap)の先頭固定アイテム。縮まず、2行目に回らない */
+	display: inline-flex;
+	margin-right: 4px;		/* 先頭（左）に置くので名前との間隔は右側に取る */
+	pointer-events: auto;	/* label__innerでpointer-eventsを切っているので[?]まわりだけ復活させる */
+}
+
+/* スキル説明を開く[?]ボタン。クリックで同じ包みの中の吹き出しをトグルする。 */
+.help {
+	position: relative;
+	top: -.25em;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	box-sizing: border-box;
+	width: 16px;
+	height: 16px;
+	padding: 0;
+	border: 1px solid currentColor;
+	border-radius: 50%;
+	background: transparent;
+	color: #ffe6a0;
+	font-size: 10px;
+	line-height: 1;
+	cursor: pointer;
+}
+
+.help:hover {
+	background: rgba( 255, 230, 160, 0.2 );
+}
+
+/* 吹き出し：ラベルと同じforeignObjectの中（[?]の包み）に置き、[?]の直上・中央に絶対配置する。
+   SVGの中にあるのでツリーのパン(transform)に自然に追従する＝位置を実測するJSは不要。
+   既定は display:none で隠し、.is-open のときだけ出す（単一表示・外側クリックで閉じるはJSが担当）。 */
+.balloon {
+	display: none;
+	position: absolute;
+	left: 50%;
+	bottom: 100%;			/* [?]の上に出す */
+	translate: -50% -8px;	/* [?]中央基準で、上に少し離して置く */
+	box-sizing: border-box;
+	width: 300px;
+	padding: 8px 10px;
+	background: rgba( 20, 18, 14, 0.96 );
+	border: 1px solid #ffe6a0;
+	border-radius: 6px;
+	box-shadow: 0 4px 12px rgba( 0, 0, 0, 0.6 );
+	color: #f2e9d0;
+	font-family: sans-serif;
+	font-size: 14px;
+	line-height: 1.6;
+	text-align: left;
+	pointer-events: auto;
+}
+
+.balloon.is-open {
+	display: block;
+}
+
+/* 説明は箇条書き（ul/li）。descriptionの改行区切り1行が1項目。 */
+.balloon__list {
+	margin: 0;
+	padding-left: 1.2em;
+	list-style: disc;
+}
+
+/* 選択状態をファイルに保存／読み込むためのコントロール。ビューポートの上に固定表示する。 */
+.Controls {
+	position: fixed;
+	right: 12px;
+	bottom: 12px;
+	z-index: 10;
+	display: flex;
+	gap: 8px;
+}
+
+.Controls button {
+	padding: 6px 12px;
+	background: rgba( 20, 18, 14, 0.9 );
+	border: 1px solid #ffe6a0;
+	border-radius: 6px;
+	color: #ffe6a0;
+	font-family: sans-serif;
+	font-size: 13px;
+	line-height: 1;
+	cursor: pointer;
+}
+
+.Controls button:hover {
+	background: rgba( 255, 230, 160, 0.2 );
+}
+
+/* 下向きの尻尾。[?]の直上に出るので常に下向きでよい。 */
+.balloon::after {
+	content: "";
+	position: absolute;
+	top: 100%;
+	left: 50%;
+	transform: translateX( -50% );
+	border: 6px solid transparent;
+	border-top-color: #ffe6a0;
+}
+
+</style>
+</head>
+<body>
+
+
+<div class="Viewport">
+<div class="Frame">
+	<div class="Frame__Inner">
+
+		<svg width="1024" height="1024" viewBox="0 0 1024 1024">
+			<defs>
+				<pattern id="line-outer" patternUnits="userSpaceOnUse" width="128" height="128">
+					<image href="./assets/img/line-outer.png" width="128" height="128" />
+				</pattern>
+				<pattern id="line-fill" patternUnits="userSpaceOnUse" width="128" height="128">
+					<image href="./assets/img/line-fill.png" width="128" height="128" />
+				</pattern>
+				<pattern id="skill-fill" patternUnits="userSpaceOnUse" width="128" height="128">
+					<image href="./assets/img/line-fill.png" width="128" height="128" />
+				</pattern>
+				<pattern id="frame-root" patternUnits="userSpaceOnUse" x="0" y="0" width="128" height="128">
+					<image href="./assets/img/frame-root.png" width="128" height="128" />
+				</pattern>
+				<pattern id="frame-uncommon-sq" patternUnits="userSpaceOnUse" x="0" y="0" width="80" height="80">
+					<image href="./assets/img/frame-uncommon-sq.png" width="80" height="80" />
+				</pattern>
+				<pattern id="frame-common-sq" patternUnits="userSpaceOnUse" x="0" y="0" width="60" height="60">
+					<image href="./assets/img/frame-common-circle.png" width="60" height="60" />
+				</pattern>
+				<pattern id="frame-common-square" patternUnits="userSpaceOnUse" x="0" y="0" width="80" height="80">
+					<image href="./assets/img/frame-common-sq.png" width="80" height="80" />
+				</pattern>
+			</defs>
+			<g id="tree"></g>
+
+		</svg>
+	</div>
+</div>
+</div>
+
+<div class="Controls">
+	<button type="button" id="save">保存</button>
+	<button type="button" id="load">読み込み</button>
+	<input type="file" id="file" accept="application/json,.json" hidden>
+</div>
+
+<script type="module">
+import InertiaDrag from 'https://cdn.jsdelivr.net/npm/inertia-drag@0.2.1/+esm';
+
+const DATA = await fetch( './data.json' ).then( ( response ) => response.json() );
+
+
+// レイアウト定数
+const CENTER = 512;				// rootを置くキャンバス中心
+const START_ANGLE = - 90;		// 各円の子の開始角（真上）
+const TERMINAL_ORBIT = 560;		// root中心からterminalまでの半径（全terminal共通＝正七角形の外接円）。
+const SKILL_ORBIT = 150;		// terminal中心からskillまでの半径（全クラスタ共通）
+const ICON_SIZE = 32;
+const PADDING = 48;
+const NAME_W = 124;				// ラベル（名前）の幅。これを超える名前は折り返す
+const NAME_H = 64;				// ラベルの高さ（14px・折り返しぶんの余裕を含む）
+const BALLOON_W = 300;			// 吹き出しの幅（viewBox余白の見積りにも使う）
+const BALLOON_MARGIN = 150;		// 吹き出しぶん、ツリー上側に確保する余白（popoverがビューポート上端で切れないように）
+
+// type → フレーム画像・ボックスサイズ
+const FRAMES = {
+	root: { pattern: 'frame-root', size: 128 },
+	terminal: { pattern: 'frame-uncommon-sq', size: 80 },
+	uncommon: { pattern: 'frame-common-square', size: 80 },
+	common: { pattern: 'frame-common-sq', size: 60 },
+};
+
+const lines = [];	// rootから子（terminal）への直線
+const rings = [];	// 末端（葉）兄弟をつなぐ円弧
+const nodes = [];
+const registry = [];	// data-node id → ノードオブジェクト
+
+const bounds = { minX: Infinity, minY: Infinity, maxX: - Infinity, maxY: - Infinity };
+
+function frameOf( node ) {
+
+	return FRAMES[ node.type ] || FRAMES.common;
+
+}
+
+// HTMLに差し込む前に最低限のエスケープをする（改行\nはwhite-space:pre-lineで折り返す）
+function escapeHtml( text ) {
+
+	return text
+		.replace( /&/g, '&amp;' )
+		.replace( /</g, '&lt;' )
+		.replace( />/g, '&gt;' );
+
+}
+
+function createNode( node, cx, cy ) {
+
+	const frame = frameOf( node );
+	const size = frame.size;
+	const x = cx - size / 2;
+	const y = cy - size / 2;
+
+	const icon = String.fromCodePoint( parseInt( node.icon, 16 ) );
+	const iconOffset = ( size - ICON_SIZE ) / 2;
+
+	const id = registry.length;
+	node._id = id;
+	registry.push( node );
+
+	// descriptionを持つノード（スキル）は、名前の横に[?]を付け、クリックで吹き出しをトグルする。
+	// 吹き出しは同じラベルforeignObjectの中（[?]の包み）に入れる＝ツリーのパンに一緒に追従する。
+	let help = '';
+
+	if ( node.description ) {
+
+		// descriptionは改行区切り。1行を1つの<li>にして箇条書きにする。
+		const items = node.description.split( '\n' ).map( ( line ) => `<li>${escapeHtml( line )}</li>` ).join( '' );
+		help = `<span class="help-wrap"><button type="button" class="help" aria-expanded="false" aria-label="説明を表示">?</button><div class="balloon"><ul class="balloon__list">${items}</ul></div></span>`;
+
+	}
+
+	return `<g class="node" transform="translate( ${x}, ${y} )">
+		<a href="#" data-node="${id}">
+			<g class="glowGroup">
+				<rect class="glow" width="${size}" height="${size}" fill="url(#${frame.pattern})" />
+			</g>
+			<rect width="${size}" height="${size}" fill="url(#${frame.pattern})" />
+			<foreignObject class="icon" x="${iconOffset}" y="${iconOffset}" width="${ICON_SIZE}" height="${ICON_SIZE}">
+				<div xmlns="http://www.w3.org/1999/xhtml">${icon}</div>
+			</foreignObject>
+		</a>
+		<foreignObject class="label" x="${( size - NAME_W ) / 2}" y="${size - 2}" width="${NAME_W}" height="${NAME_H}">
+			<div xmlns="http://www.w3.org/1999/xhtml" class="label__inner">${help}<span class="label__name">${escapeHtml( node.name )}</span></div>
+		</foreignObject>
+	</g>`;
+
+}
+
+// 末端の子（葉）を、乗っている周回円に沿う同心弧でつなぐ閉じた環。
+// nodeId は親（uncommon）のid。兄弟を全取得＝円完成のときだけ赤テクスチャを出す。
+// パスの起点は必ず12時方向（真上）にし、stroke-dashoffsetの描き始めをリング間で揃える。
+function createArcRing( radius, positions, nodeId, cx, cy ) {
+
+	const top = { x: cx, y: cy - radius };	// 円の真上（12時）
+
+	// ノードを12時から時計回りの順に並べ替える（y下向きなので角度が増える向き＝時計回り）
+	const ordered = positions
+		.map( ( p ) => {
+
+			let angle = Math.atan2( p.y - cy, p.x - cx ) + Math.PI / 2;
+			if ( angle < 0 ) angle += Math.PI * 2;
+			return { p, angle };
+
+		} )
+		.sort( ( a, b ) => a.angle - b.angle )
+		.map( ( o ) => o.p );
+
+	// 真上 → 各ノード → 真上に戻る
+	let d = `M ${top.x} ${top.y}`;
+	for ( const p of ordered ) d += ` A ${radius} ${radius} 0 0 1 ${p.x} ${p.y}`;
+	d += ` A ${radius} ${radius} 0 0 1 ${top.x} ${top.y}`;
+
+	return `<g class="ring" data-ring="${nodeId}" fill="none">
+		<path d="${d}" stroke="url(#line-outer)" stroke-width="12" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,.5))" />
+		<path d="${d}" stroke="#000" stroke-width="6" />
+		<path class="ring-fill" d="${d}" stroke="url(#line-fill)" stroke-width="4" pathLength="1" />
+	</g>`;
+
+}
+
+// 直線（rootから子への接続）。リングと同じ作り：縄＋黒芯のプレースホルダー＋
+// 赤い塗り(line-fill)をstroke-dashoffsetで中心側から描き込む。nodeId はその先のterminル。
+function createLine( x1, y1, x2, y2, nodeId ) {
+
+	const d = `M ${x1} ${y1} L ${x2} ${y2}`;
+
+	return `<g class="ring" data-ring="${nodeId}" fill="none">
+		<path d="${d}" stroke="url(#line-outer)" stroke-width="24" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,.5))" />
+		<path d="${d}" stroke="#000" stroke-width="12" />
+		<path class="ring-fill" d="${d}" stroke="url(#line-fill)" stroke-width="8" pathLength="1" />
+	</g>`;
+
+}
+
+function extendBounds( node, cx, cy ) {
+
+	const half = frameOf( node ).size / 2;
+	bounds.minX = Math.min( bounds.minX, cx - half );
+	bounds.minY = Math.min( bounds.minY, cy - half );
+	bounds.maxX = Math.max( bounds.maxX, cx + half );
+	bounds.maxY = Math.max( bounds.maxY, cy + half );
+
+}
+
+// 整列した同心配置：
+// - depth 0（root）→ terminalを固定半径 TERMINAL_ORBIT の正多角形（正七角形）頂点に等間隔配置
+// - depth 1（terminal）→ skillを固定半径 SKILL_ORBIT の円に等間隔配置（root側に隙間を向ける）
+// どのクラスタも同じ半径・同じ規則で並ぶので、全体が左右対称の幾何学的な図になる。
+function place( node, cx, cy, depth ) {
+
+	nodes.push( createNode( node, cx, cy ) );
+	extendBounds( node, cx, cy );
+
+	const children = node.children || [];
+	if ( children.length === 0 ) return;
+
+	const n = children.length;
+	const step = 2 * Math.PI / n;
+	const childrenAreLeaves = children.every( ( child ) => ( child.children || [] ).length === 0 );
+
+	const orbit = depth === 0 ? TERMINAL_ORBIT : SKILL_ORBIT;
+
+	let start = START_ANGLE * Math.PI / 180;	// 真上（12時）から。頂点が上に来て左右対称になる
+	if ( depth === 1 ) {
+
+		// terminalの子（skill）は、中心へ戻る方向にちょうど隙間が来るよう回転させ、
+		// rootからの直線がskillを貫かないようにする（全クラスタで揃った向き）
+		const inward = Math.atan2( CENTER - cy, CENTER - cx );
+		start = inward + step / 2;
+
+	}
+
+	const positions = [];
+	for ( let i = 0; i < n; i ++ ) {
+
+		const angle = start + step * i;
+		const x = cx + Math.cos( angle ) * orbit;
+		const y = cy + Math.sin( angle ) * orbit;
+		positions.push( { x, y } );
+
+		place( children[ i ], x, y, depth + 1 );
+
+		// 中心のroot（Web制作）だけは子（terminal）へ直線を引く。
+		// place後なのでchildren[i]._idが確定している（その先のterminル完成で赤が入る）。
+		// 始点をterminル側にして、赤はterminルから中心へ向かって描き込まれる。
+		if ( depth === 0 ) lines.push( createLine( x, y, cx, cy, children[ i ]._id ) );
+
+	}
+
+	// 末端（葉＝スキル）の兄弟だけをロープの弧でつなぐ。
+	// terminal（frame-uncommon-sq）同士をつなぐ親レベルの円は描かない。
+	// 完成（中心ノードが取得済み＝配下を全取得）で12時から赤が描き込まれる。
+	if ( childrenAreLeaves ) {
+
+		rings.push( createArcRing( orbit, positions, node._id, cx, cy ) );
+
+	}
+
+}
+
+const root = DATA[ 0 ];
+
+place( root, CENTER, CENTER, 0 );
+
+// root（中心ノード）を図の中心に置くため、viewBoxをrootを中心に対称に取る。
+// 各方向で必要な余白（上：吹き出し／下：ラベル／左右：吹き出し半幅）を足したうえで、
+// 中心からの最大距離を半幅・半高として左右・上下に同じだけ確保する。
+const marginX = PADDING + BALLOON_W / 2;			// 左右：吹き出し半幅ぶん
+const marginTop = PADDING + BALLOON_MARGIN;			// 上：吹き出し（Popover）ぶん
+const marginBottom = PADDING + NAME_H;				// 下：ノード下のラベルぶん
+
+const halfW = Math.max( CENTER - bounds.minX, bounds.maxX - CENTER ) + marginX;
+const halfH = Math.max( ( CENTER - bounds.minY ) + marginTop, ( bounds.maxY - CENTER ) + marginBottom );
+
+const viewX = CENTER - halfW;
+const viewY = CENTER - halfH;
+const viewW = halfW * 2;
+const viewH = halfH * 2;
+
+const svg = document.querySelector( '.Frame__Inner svg' );
+svg.setAttribute( 'viewBox', `${viewX} ${viewY} ${viewW} ${viewH}` );
+svg.setAttribute( 'width', viewW );
+svg.setAttribute( 'height', viewH );
+
+// 中心スポーク→末端の弧→ノードの順で重ねる（スポークが最背面）
+const tree = document.getElementById( 'tree' );
+tree.innerHTML = lines.join( '' ) + rings.join( '' ) + nodes.join( '' );
+
+
+// スキル取得（クリックでトグル）
+// - 葉（末端の子）は自分の取得状態を持つ
+// - 親は「子が全て取得済みなら取得済み」（末端を全部取ると親も取得）
+// - 親をクリックで取得すると、その子孫（葉）を全て取得（逆も同様にトグルで解除）
+function isLeaf( node ) {
+
+	return ( node.children || [] ).length === 0;
+
+}
+
+function isAcquired( node ) {
+
+	if ( isLeaf( node ) ) return node._acquired === true;
+	return node.children.every( isAcquired );
+
+}
+
+function setSubtree( node, value ) {
+
+	if ( isLeaf( node ) ) {
+
+		node._acquired = value;
+		return;
+
+	}
+
+	for ( const child of node.children ) setSubtree( child, value );
+
+}
+
+// data-node id → 要素を紐付け
+for ( const el of tree.querySelectorAll( 'a[data-node]' ) ) {
+
+	registry[ el.dataset.node ]._el = el;
+
+}
+
+// data-ring を持つ線（末端の弧・親レベルの円・中心からのスポーク）。
+// 1ノードに複数（ガイド円＋スポーク）紐づくので要素側で列挙する。
+const ringEls = [ ...tree.querySelectorAll( '.ring[data-ring]' ) ];
+
+function refresh() {
+
+	for ( const node of registry ) {
+
+		node._el.classList.toggle( 'is-acquired', isAcquired( node ) );
+
+	}
+
+	// その線が指すノードを全取得（＝完成）したときだけ赤い塗りを描き込む
+	for ( const el of ringEls ) {
+
+		el.classList.toggle( 'is-complete', isAcquired( registry[ el.dataset.ring ] ) );
+
+	}
+
+}
+
+// --- 選択状態をURLに載せる（戻る/進むは考慮しない＝replaceStateで履歴を汚さない） ---
+// data.jsonが同じなら葉ノード（スキル）のid順は不変なので、葉の取得状態をビット列にして
+// base64urlにし、クエリ ?s= に載せる。順序はregistry（生成順）に従う。
+const leaves = registry.filter( isLeaf );
+
+function encodeState() {
+
+	const bytes = new Uint8Array( Math.ceil( leaves.length / 8 ) );
+	for ( let i = 0; i < leaves.length; i ++ ) {
+
+		if ( leaves[ i ]._acquired === true ) bytes[ i >> 3 ] |= 1 << ( i & 7 );
+
+	}
+
+	let binary = '';
+	for ( const byte of bytes ) binary += String.fromCharCode( byte );
+	return btoa( binary ).replace( /\+/g, '-' ).replace( /\//g, '_' ).replace( /=+$/, '' );
+
+}
+
+function decodeState( text ) {
+
+	const binary = atob( text.replace( /-/g, '+' ).replace( /_/g, '/' ) );
+	for ( let i = 0; i < leaves.length; i ++ ) {
+
+		const byte = binary.charCodeAt( i >> 3 ) || 0;
+		leaves[ i ]._acquired = ( byte & ( 1 << ( i & 7 ) ) ) !== 0;
+
+	}
+
+}
+
+function updateUrl() {
+
+	const url = new URL( location.href );
+	if ( leaves.some( ( leaf ) => leaf._acquired === true ) ) url.searchParams.set( 's', encodeState() );
+	else url.searchParams.delete( 's' );
+	history.replaceState( null, '', url );
+
+}
+
+// URLに載っている選択状態を復元する（壊れたパラメータは無視して全offで始める）
+const savedState = new URL( location.href ).searchParams.get( 's' );
+
+if ( savedState !== null ) {
+
+	try {
+
+		decodeState( savedState );
+
+	} catch ( error ) {
+
+		// 壊れた ?s= は無視（何も取得していない状態で始める）
+
+	}
+
+}
+
+// --- 選択状態をJSONファイルとして保存／読み込み ---
+// URL(?s=)は復元用のコンパクトなビット列だが、こちらは人が読める形（取得済みスキル名の配列）。
+// スキル名はdata.json内で一意なので、読み込み時は名前一致で復元する。
+function saveFile() {
+
+	const acquired = leaves.filter( ( leaf ) => leaf._acquired === true ).map( ( leaf ) => leaf.name );
+	const json = JSON.stringify( { version: 1, acquired }, null, '\t' );
+	const blob = new Blob( [ json ], { type: 'application/json' } );
+	const url = URL.createObjectURL( blob );
+	const anchor = document.createElement( 'a' );
+	anchor.href = url;
+	anchor.download = 'skill-tree.json';
+	anchor.click();
+	URL.revokeObjectURL( url );
+
+}
+
+function loadFile( file ) {
+
+	const reader = new FileReader();
+
+	reader.onload = () => {
+
+		try {
+
+			const data = JSON.parse( reader.result );
+			const acquired = new Set( Array.isArray( data.acquired ) ? data.acquired : [] );
+			for ( const leaf of leaves ) leaf._acquired = acquired.has( leaf.name );
+			refresh();
+			updateUrl();
+
+		} catch ( error ) {
+
+			// 壊れたJSONは無視（状態は変えない）
+
+		}
+
+	};
+
+	reader.readAsText( file );
+
+}
+
+const fileInput = document.getElementById( 'file' );
+
+document.getElementById( 'save' ).addEventListener( 'click', saveFile );
+document.getElementById( 'load' ).addEventListener( 'click', () => fileInput.click() );
+
+fileInput.addEventListener( 'change', () => {
+
+	if ( fileInput.files.length > 0 ) loadFile( fileInput.files[ 0 ] );
+	fileInput.value = '';	// 同じファイルを連続で選び直せるようにリセット
+
+} );
+
+// 吹き出しはforeignObjectの中の[?]の直上に絶対配置してあり、パンにも一緒に追従する。
+// Popoverをやめた分、「単一表示」「外側クリックで閉じる」「他ノードの背後に隠れない前面化」を自前で担う。
+let openBalloon = null;
+
+function closeBalloon() {
+
+	if ( openBalloon === null ) return;
+
+	openBalloon.classList.remove( 'is-open' );
+	const button = openBalloon.parentElement.querySelector( '.help' );
+	if ( button !== null ) button.setAttribute( 'aria-expanded', 'false' );
+	openBalloon = null;
+
+}
+
+function openBalloonFor( button ) {
+
+	const balloon = button.parentElement.querySelector( '.balloon' );
+	if ( balloon === null ) return;
+
+	closeBalloon();
+	balloon.classList.add( 'is-open' );
+	button.setAttribute( 'aria-expanded', 'true' );
+	openBalloon = balloon;
+
+	// SVGは書いた順に重なるので、開いたノードを最後尾へ動かして最前面に出す（隣ノードの背後に隠れない）
+	tree.appendChild( button.closest( '.node' ) );
+
+}
+
+// [?]クリックでその吹き出しをトグル（もう一度押すと閉じる）。
+tree.addEventListener( 'click', ( event ) => {
+
+	const button = event.target.closest( '.help' );
+	if ( button === null ) return;
+
+	event.preventDefault();
+	event.stopPropagation();
+
+	const balloon = button.parentElement.querySelector( '.balloon' );
+	if ( balloon === openBalloon ) closeBalloon();
+	else openBalloonFor( button );
+
+} );
+
+// 外側クリック／Escで閉じる（[?]・吹き出しの中のクリックは無視）。
+document.addEventListener( 'click', ( event ) => {
+
+	if ( event.target.closest( '.help' ) !== null || event.target.closest( '.balloon' ) !== null ) return;
+
+	// ドラッグ（パン）の終了で飛んでくるclickは、閉じるための「外側クリック」ではないので無視する
+	if ( panState.dragDistance > DRAG_THRESHOLD ) return;
+
+	closeBalloon();
+
+} );
+
+document.addEventListener( 'keydown', ( event ) => {
+
+	if ( event.key === 'Escape' ) closeBalloon();
+
+} );
+
+// ドラッグでのパン中に貯まった移動量。mouseupの直後に飛んでくるclickを、
+// これがしきい値を超えていたら「ドラッグだった」とみなして取得トグルを止める。
+const DRAG_THRESHOLD = 5;	// px。これ以下の微小な動きはクリックとして扱う
+const panState = { dragDistance: 0 };
+
+// スキルのon/off効果音。連打しても音が欠けない／重なるように、Web Audio APIで鳴らす。
+// Audio要素のplay()は再生中だと重複再生できず、currentTime=0でのリセットは前の音を切ってしまう。
+// Web Audioなら1回ごとに新しいBufferSourceを生成して鳴らすので、連続クリックでも各発音が独立する。
+// AudioContextはユーザー操作（クリック）が起点なので自動再生ポリシーに触れない。suspendedなら都度resume。
+const audioContext = new ( window.AudioContext || window.webkitAudioContext )();
+const soundBuffers = { on: null, off: null };
+
+async function loadSound( name, url ) {
+
+	const arrayBuffer = await fetch( url ).then( ( response ) => response.arrayBuffer() );
+	soundBuffers[ name ] = await audioContext.decodeAudioData( arrayBuffer );
+
+}
+
+loadSound( 'on', './assets/media/on.mp3' );
+loadSound( 'off', './assets/media/off.mp3' );
+
+function playSound( name ) {
+
+	const buffer = soundBuffers[ name ];
+	if ( buffer === null ) return;	// まだデコードが終わっていなければ鳴らさない
+
+	if ( audioContext.state === 'suspended' ) audioContext.resume();
+
+	const source = audioContext.createBufferSource();
+	source.buffer = buffer;
+	source.connect( audioContext.destination );
+	source.start();
+
+}
+
+// スキル取得（アイコンの<a>をクリックでトグル）。[?]はSVGの<a>の外にあり、popovertargetで
+// 吹き出しをトグルするだけなので、ここには来ない（＝取得と説明表示は分離される）。
+tree.addEventListener( 'click', ( event ) => {
+
+	const anchor = event.target.closest( 'a[data-node]' );
+	if ( anchor === null ) return;
+
+	event.preventDefault();
+
+	// ツリーを掴んで動かしただけのときは取得をトグルしない
+	if ( panState.dragDistance > DRAG_THRESHOLD ) return;
+
+	const node = registry[ anchor.dataset.node ];
+	const value = ! isAcquired( node );	// これから設定する状態（true=取得＝on / false=解除＝off）
+	setSubtree( node, value );
+	refresh();
+	updateUrl();
+
+	playSound( value ? 'on' : 'off' );
+
+} );
+
+refresh();
+
+
+// --- 慣性ドラッグでツリー全体をパンする ---
+// InertiaDragは要素を動かさず、dragmove/inertiamoveでdeltaX/deltaYを配るだけ。
+// その差分でビューポートのscrollLeft/scrollTopを動かす（＝ネイティブのスクロールと同じ土俵）。
+// transformと違いスクロール位置が実際に動くので、ホイール／トラックパッドと共存できる。
+// はみ出し範囲でのクランプはブラウザのスクロールが自動でやるので、自前の範囲計算は不要。
+const viewport = document.querySelector( '.Viewport' );
+const frame = document.querySelector( '.Frame' );
+
+// 初期表示：フレームをビューポート中央にスクロールして合わせる（フレームが窓より大きい前提）
+viewport.scrollLeft = ( frame.offsetWidth - viewport.clientWidth ) / 2;
+viewport.scrollTop = ( frame.offsetHeight - viewport.clientHeight ) / 2;
+
+const inertiaDrag = new InertiaDrag( viewport );
+inertiaDrag.friction = 0.1;	// 小さいほど慣性が長く続く（既定0.15）
+
+// 掴んで右へ引いたら（deltaX>0）中身は右へ動く＝左側が見える＝scrollLeftは減る。だから引き算。
+function pan( event ) {
+
+	const beforeLeft = viewport.scrollLeft;
+	const beforeTop = viewport.scrollTop;
+
+	viewport.scrollLeft -= event.deltaX;
+	viewport.scrollTop -= event.deltaY;
+
+	panState.dragDistance += Math.abs( event.deltaX ) + Math.abs( event.deltaY );
+
+	// 慣性中に両軸とも端で動かなくなったら、そこで慣性を止める（無駄に回し続けない）
+	if (
+		inertiaDrag.isInertiaMoving &&
+		viewport.scrollLeft === beforeLeft &&
+		viewport.scrollTop === beforeTop
+	) {
+
+		inertiaDrag.stop();
+
+	}
+
+}
+
+inertiaDrag.addEventListener( 'dragstart', () => {
+
+	panState.dragDistance = 0;
+	viewport.classList.add( 'is-grabbing' );
+
+} );
+
+inertiaDrag.addEventListener( 'dragmove', pan );
+inertiaDrag.addEventListener( 'inertiamove', pan );
+
+inertiaDrag.addEventListener( 'dragend', () => {
+
+	viewport.classList.remove( 'is-grabbing' );
+
+} );
+</script>
+
+</body>
+</html>
